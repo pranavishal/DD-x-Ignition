@@ -169,7 +169,7 @@ export default function LandingPage({ onLocationSelect, onJourneySelect }: Landi
 
       {/* Fixed centered globe */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[1]">
-        <div className="w-[600px] h-[600px] pointer-events-auto">
+        <div className="w-[800px] h-[800px] pointer-events-auto">
           <CobeGlobe className="w-full aspect-square" />
         </div>
       </div>
@@ -183,14 +183,17 @@ export default function LandingPage({ onLocationSelect, onJourneySelect }: Landi
           transition={{ delay: 0.3 }}
           className="text-center max-w-2xl"
         >
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
-            Every building has a story.{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-black to-gray-500">
-              We make it visible.
-            </span>
+          <h1
+            className="text-4xl md:text-6xl font-bold tracking-tight mb-4"
+            style={{ textShadow: "0 0 10px white, 0 0 20px white, 0 0 40px white, 0 0 60px white, 0 0 80px white" }}
+          >
+            Urban Marble
           </h1>
-          <p className="text-lg text-gray-500 mb-2">
-            Tap any building on Earth. Read its history. Add your own.
+          <p
+            className="text-lg text-gray-500 mb-2"
+            style={{ textShadow: "0 0 10px white, 0 0 20px white, 0 0 40px white, 0 0 60px white, 0 0 80px white" }}
+          >
+            Every building has a story. We make it visible.
           </p>
         </motion.div>
       </section>
