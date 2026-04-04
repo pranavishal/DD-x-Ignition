@@ -1,24 +1,33 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import CesiumScene from "@/components/map/CesiumScene";
 import Panel from "@/components/ui/Panel";
 import StoryModal from "@/components/ui/StoryModal";
 import LandingPage from "@/components/ui/LandingPage";
+import JourneyPlayer from "@/components/features/JourneyPlayer";
+import JourneyRoutePreview from "@/components/features/JourneyRoutePreview";
 import PulseButton from "@/components/features/pulse/PulseButton";
 import PulseOverlay from "@/components/features/pulse/PulseOverlay";
 import CouponCelebration from "@/components/features/pulse/CouponCelebration";
-import { Building, StoryScene, UniqueSpot } from "@/types";
+import { Building, StoryScene, UniqueSpot, JourneyData } from "@/types";
 import { getSeedSpots } from "@/data/mockSpots";
 import { getRandomProfile } from "@/data/mockProfiles";
+import { Loader2, Compass } from "lucide-react";
 
 export default function Home() {
   const [exploreLocation, setExploreLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [isStoryPlaying, setIsStoryPlaying] = useState(false);
   const [activeStoryScenes, setActiveStoryScenes] = useState<StoryScene[]>([]);
+
+  // Journey state
   const [journeyLocation, setJourneyLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
+  const [journeyData, setJourneyData] = useState<JourneyData | null>(null);
+  const [isJourneyLoading, setIsJourneyLoading] = useState(false);
+  const [isRoutePreview, setIsRoutePreview] = useState(false);
+  const cesiumViewerRef = useRef<any>(null);
 
   // Pulse state
   const [isPulseOpen, setIsPulseOpen] = useState(false);
@@ -53,6 +62,58 @@ export default function Home() {
 
     fetchNearbySpots();
   }, [exploreLocation]);
+
+  // Fetch journey data when a journey is triggered
+  useEffect(() => {
+    if (!journeyLocation) return;
+
+    const fetchJourney = async () => {
+      setIsJourneyLoading(true);
+      try {
+        const res = await fetch("/api/generate-journey", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cityName: journeyLocation.name,
+            lat: journeyLocation.lat,
+            lng: journeyLocation.lng,
+          }),
+        });
+        if (!res.ok) throw new Error("Journey generation failed");
+        const data = await res.json();
+        setJourneyData(data);
+        setIsRoutePreview(true);
+      } catch (err) {
+        console.error("Journey generation failed:", err);
+        setJourneyLocation(null);
+        setIsRoutePreview(false);
+      } finally {
+        setIsJourneyLoading(false);
+      }
+    };
+
+    fetchJourney();
+  }, [journeyLocation]);
+
+  const handleViewerReady = useCallback((viewer: any) => {
+    cesiumViewerRef.current = viewer;
+  }, []);
+
+  const handleJourneyEnd = useCallback(() => {
+    setJourneyData(null);
+    setJourneyLocation(null);
+    setIsRoutePreview(false);
+  }, []);
+
+  const handlePreviewStart = useCallback(() => {
+    setIsRoutePreview(false);
+  }, []);
+
+  const handlePreviewCancel = useCallback(() => {
+    setJourneyData(null);
+    setJourneyLocation(null);
+    setIsRoutePreview(false);
+  }, []);
 
   const handleLikeSpot = useCallback((id: string) => {
     setSpots((prev) =>
@@ -104,29 +165,40 @@ export default function Home() {
             <CesiumScene
               targetLocation={exploreLocation}
               onBuildingSelect={(building) => setSelectedBuilding(building)}
+              onViewerReady={handleViewerReady}
             />
 
             {/* Small Header Overlay */}
-            <div className="absolute top-0 left-0 w-full p-6 pointer-events-none z-10 flex justify-between items-start">
-              <div className="max-w-md">
-                <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg mb-1">
-                  {exploreLocation.name}
-                </h1>
-                <p className="text-sm text-white/90 drop-shadow-md bg-black/40 inline-block px-3 py-1 rounded-full backdrop-blur-sm">
-                  Click any building to uncover its story.
-                </p>
-              </div>
+            <div className="absolute top-0 left-0 w-full pointer-events-none z-10">
+              <div className="bg-gradient-to-b from-black/70 via-black/40 to-transparent p-6 pb-10 flex justify-between items-start">
+                <div className="max-w-md">
+                  <h1
+                    className="text-2xl md:text-3xl font-bold text-white mb-1"
+                    style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.9)" }}
+                  >
+                    {exploreLocation.name}
+                  </h1>
+                  <p className="text-sm text-white/90 bg-black/50 inline-block px-3 py-1 rounded-full backdrop-blur-sm"
+                    style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
+                  >
+                    Click any building to uncover its story.
+                  </p>
+                </div>
 
-              <button
-                onClick={() => {
-                  setExploreLocation(null);
-                  setSelectedBuilding(null);
-                  setIsPulseOpen(false);
-                }}
-                className="pointer-events-auto bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-full backdrop-blur-md transition-colors text-sm font-medium"
-              >
-                Change Location
-              </button>
+                <button
+                  onClick={() => {
+                    setExploreLocation(null);
+                    setSelectedBuilding(null);
+                    setIsPulseOpen(false);
+                    setJourneyData(null);
+                    setJourneyLocation(null);
+                    setIsRoutePreview(false);
+                  }}
+                  className="pointer-events-auto bg-white hover:bg-gray-100 text-gray-900 px-5 py-2.5 rounded-full transition-colors text-sm font-semibold shadow-lg shadow-black/30"
+                >
+                  Change Location
+                </button>
+              </div>
             </div>
 
             {/* Slide-out Panel */}
@@ -176,6 +248,50 @@ export default function Home() {
                 <CouponCelebration
                   spot={celebratingSpot}
                   onDismiss={handleDismissCelebration}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Journey loading screen */}
+            <AnimatePresence>
+              {isJourneyLoading && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center"
+                >
+                  <Compass className="w-12 h-12 text-indigo-400 mb-4 animate-spin" style={{ animationDuration: "3s" }} />
+                  <p className="text-white text-xl font-semibold mb-2">
+                    Preparing your journey...
+                  </p>
+                  <p className="text-white/50 text-sm">
+                    Discovering landmarks and recording narration
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Journey Route Preview */}
+            <AnimatePresence>
+              {journeyData && cesiumViewerRef.current && !isJourneyLoading && isRoutePreview && (
+                <JourneyRoutePreview
+                  journeyData={journeyData}
+                  viewer={cesiumViewerRef.current}
+                  onStart={handlePreviewStart}
+                  onCancel={handlePreviewCancel}
+                  onLandmarkClick={(building) => setSelectedBuilding(building)}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Journey Player */}
+            <AnimatePresence>
+              {journeyData && cesiumViewerRef.current && !isJourneyLoading && !isRoutePreview && (
+                <JourneyPlayer
+                  journeyData={journeyData}
+                  viewer={cesiumViewerRef.current}
+                  onEnd={handleJourneyEnd}
                 />
               )}
             </AnimatePresence>
