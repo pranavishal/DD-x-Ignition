@@ -24,11 +24,20 @@ export default function StoryPlayer({ scenes, audioUrl }: StoryPlayerProps) {
       audioRef.current.volume = 0.5;
       
       // Attempt to play immediately (might be blocked by browser autoplay policies)
-      audioRef.current.play().catch(e => console.warn("Autoplay blocked:", e));
+      const playPromise = audioRef.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(e => {
+          console.warn("Autoplay blocked or interrupted:", e);
+          // If autoplay is blocked, we can optionally show a "Click to unmute" UI
+          // but for now we just catch the error so it doesn't crash the console
+        });
+      }
     }
 
     return () => {
       if (audioRef.current) {
+        // Pause the audio before destroying the component
         audioRef.current.pause();
         audioRef.current.src = "";
       }
