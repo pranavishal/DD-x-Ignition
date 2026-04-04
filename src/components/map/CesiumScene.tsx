@@ -11,12 +11,24 @@ interface CesiumSceneProps {
 export default function CesiumScene({ targetLocation, onBuildingSelect }: CesiumSceneProps) {
   const cesiumContainer = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
+  const targetLocationRef = useRef(targetLocation);
+  const onBuildingSelectRef = useRef(onBuildingSelect);
+
+  // Keep refs updated so the click handler always has the latest values without needing to be recreated
+  useEffect(() => {
+    targetLocationRef.current = targetLocation;
+  }, [targetLocation]);
+
+  useEffect(() => {
+    onBuildingSelectRef.current = onBuildingSelect;
+  }, [onBuildingSelect]);
 
   useEffect(() => {
     let checkInterval: NodeJS.Timeout;
 
     const initCesium = () => {
       const Cesium = (window as any).Cesium;
+      // If Cesium isn't loaded yet, or if the container is missing, or if we ALREADY initialized the viewer, abort.
       if (!Cesium || !cesiumContainer.current || viewerRef.current) return false;
 
       // Set the Cesium Ion access token
@@ -53,17 +65,19 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
 
       // Add OSM Buildings using the modern async method now that we have a token
       Cesium.createOsmBuildingsAsync().then((buildingsTileset: any) => {
-        viewer.scene.primitives.add(buildingsTileset);
+        if (viewerRef.current && !viewerRef.current.isDestroyed()) {
+          viewerRef.current.scene.primitives.add(buildingsTileset);
+        }
       }).catch((err: any) => {
         console.error("Error loading 3D buildings:", err);
       });
 
       // Fly to the searched location on initial load
-      if (targetLocation) {
+      if (targetLocationRef.current) {
         viewer.camera.flyTo({
           destination: Cesium.Cartesian3.fromDegrees(
-            targetLocation.lng,
-            targetLocation.lat - 0.01, // Offset slightly south to look north
+            targetLocationRef.current.lng,
+            targetLocationRef.current.lat - 0.01, // Offset slightly south to look north
             1500 // Height
           ),
           orientation: {
@@ -85,15 +99,27 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
       viewer.trackedEntity = undefined;
       viewer.selectedEntity = undefined;
 
+      // Track the currently highlighted building feature so we can reset it on the next click
+      let highlightedFeature: any = null;
+      const HIGHLIGHT_COLOR = Cesium.Color.fromCssColorString("#64B5F6");
+
       handler.setInputAction((click: any) => {
-        // Force Cesium to drop any selection it just made behind the scenes
         viewer.selectedEntity = undefined;
         viewer.trackedEntity = undefined;
+
+        // Reset previous building highlight
+        if (highlightedFeature) {
+          try { highlightedFeature.color = Cesium.Color.WHITE; } catch (_) {}
+          highlightedFeature = null;
+        }
         
         const pickedObject = viewer.scene.pick(click.position);
         
         if (Cesium.defined(pickedObject) && pickedObject instanceof Cesium.Cesium3DTileFeature) {
-          // Extract metadata from the clicked 3D tile
+          // Highlight the selected building
+          pickedObject.color = HIGHLIGHT_COLOR;
+          highlightedFeature = pickedObject;
+
           const featureName = pickedObject.getProperty('name');
           const featureType = pickedObject.getProperty('building');
           const featureHeight = pickedObject.getProperty('cesium_estimated_height');
@@ -101,10 +127,8 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
           const name = featureName || (featureType ? `A ${featureType} building` : "Unknown Building");
           const heightStr = featureHeight ? ` standing approximately ${Math.round(featureHeight)} meters tall.` : ".";
 
-          // Get the actual coordinates of the clicked building to pass to the API
-          // We EXCLUSIVELY use pickEllipsoid here. 
-          // pickPosition on 3D tiles without depth testing often returns the tileset's root bounding volume center (Manhattan).
-          // pickEllipsoid mathematically calculates the exact Lat/Lng of the ground directly under the mouse cursor.
+          // pickEllipsoid calculates the Lat/Lng of the ground under the cursor.
+          // pickPosition on 3D tiles without terrain returns the tileset bounding volume center (Manhattan).
           const cartesian = viewer.scene.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
           
           if (Cesium.defined(cartesian)) {
@@ -112,15 +136,10 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
             const lng = Cesium.Math.toDegrees(cartographic.longitude);
             const lat = Cesium.Math.toDegrees(cartographic.latitude);
 
-            // REMOVED: viewer.camera.flyTo(...)
-            // We no longer move the camera when a building is clicked.
-            // It behaves exactly like original Cesium - you click, the UI opens, the camera stays put.
-
-            // Generate a dynamic mock building object on the fly for any clicked building
             const dynamicBuilding: Building = {
               id: pickedObject.pickId || Math.random().toString(),
-              name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalize
-              address: targetLocation?.name || "Unknown Location",
+              name: name.charAt(0).toUpperCase() + name.slice(1),
+              address: targetLocationRef.current?.name || "Unknown Location",
               coordinates: { lat, lng, height: featureHeight || 0 },
               yearBuilt: "Unknown",
               originalUse: featureType || "Commercial/Residential",
@@ -142,7 +161,7 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
                 }
               ]
             };
-            onBuildingSelect(dynamicBuilding);
+            onBuildingSelectRef.current(dynamicBuilding);
           }
         }
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -166,7 +185,7 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
         viewerRef.current = null;
       }
     };
-  }, [targetLocation, onBuildingSelect]);
+  }, []); // Remove targetLocation and onBuildingSelect from dependencies so it only runs ONCE
 
   return (
     <div 
