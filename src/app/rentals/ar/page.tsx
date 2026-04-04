@@ -319,7 +319,7 @@ export default function ARViewPage() {
         <div className="absolute bottom-28 left-0 right-0 z-40 flex justify-center pointer-events-none">
           <button
             onClick={scanBuilding}
-            className="pointer-events-auto flex items-center gap-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-6 py-3.5 rounded-2xl shadow-2xl shadow-blue-500/30 font-semibold text-sm transition-all active:scale-95 border border-white/20"
+            className="pointer-events-auto flex items-center gap-2.5 bg-black/50 hover:bg-black/60 backdrop-blur-md text-white px-6 py-3.5 rounded-full font-semibold text-sm transition-all active:scale-95 border border-white/20 shadow-lg"
           >
             <ScanLine className="w-5 h-5" />
             Scan Building
