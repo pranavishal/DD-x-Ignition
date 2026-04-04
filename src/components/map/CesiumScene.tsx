@@ -11,12 +11,24 @@ interface CesiumSceneProps {
 export default function CesiumScene({ targetLocation, onBuildingSelect }: CesiumSceneProps) {
   const cesiumContainer = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
+  const targetLocationRef = useRef(targetLocation);
+  const onBuildingSelectRef = useRef(onBuildingSelect);
+
+  // Keep refs updated so the click handler always has the latest values without needing to be recreated
+  useEffect(() => {
+    targetLocationRef.current = targetLocation;
+  }, [targetLocation]);
+
+  useEffect(() => {
+    onBuildingSelectRef.current = onBuildingSelect;
+  }, [onBuildingSelect]);
 
   useEffect(() => {
     let checkInterval: NodeJS.Timeout;
 
     const initCesium = () => {
       const Cesium = (window as any).Cesium;
+      // If Cesium isn't loaded yet, or if the container is missing, or if we ALREADY initialized the viewer, abort.
       if (!Cesium || !cesiumContainer.current || viewerRef.current) return false;
 
       // Set the Cesium Ion access token
@@ -53,17 +65,19 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
 
       // Add OSM Buildings using the modern async method now that we have a token
       Cesium.createOsmBuildingsAsync().then((buildingsTileset: any) => {
-        viewer.scene.primitives.add(buildingsTileset);
+        if (viewerRef.current && !viewerRef.current.isDestroyed()) {
+          viewerRef.current.scene.primitives.add(buildingsTileset);
+        }
       }).catch((err: any) => {
         console.error("Error loading 3D buildings:", err);
       });
 
       // Fly to the searched location on initial load
-      if (targetLocation) {
+      if (targetLocationRef.current) {
         viewer.camera.flyTo({
           destination: Cesium.Cartesian3.fromDegrees(
-            targetLocation.lng,
-            targetLocation.lat - 0.01, // Offset slightly south to look north
+            targetLocationRef.current.lng,
+            targetLocationRef.current.lat - 0.01, // Offset slightly south to look north
             1500 // Height
           ),
           orientation: {
@@ -85,6 +99,9 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
       viewer.trackedEntity = undefined;
       viewer.selectedEntity = undefined;
 
+      // We need to use a ref to hold the latest targetLocation so the click handler can access it
+      // without needing to be recreated (which would require putting targetLocation in the dependency array)
+      
       handler.setInputAction((click: any) => {
         // Force Cesium to drop any selection it just made behind the scenes
         viewer.selectedEntity = undefined;
@@ -116,33 +133,32 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
             // We no longer move the camera when a building is clicked.
             // It behaves exactly like original Cesium - you click, the UI opens, the camera stays put.
 
-            // Generate a dynamic mock building object on the fly for any clicked building
             const dynamicBuilding: Building = {
-              id: pickedObject.pickId || Math.random().toString(),
-              name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalize
-              address: targetLocation?.name || "Unknown Location",
-              coordinates: { lat, lng, height: featureHeight || 0 },
-              yearBuilt: "Unknown",
-              originalUse: featureType || "Commercial/Residential",
-              currentUse: featureType || "Commercial/Residential",
-              summary: `You discovered a building in the heart of the city${heightStr}`,
-              timelineEvents: [],
-              images: [],
-              generatedStory: "",
-              storyScenes: [
-                {
-                  text: "This building stands as a testament to the city's continuous growth and evolution.",
-                  imageUrl: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&q=80",
-                  duration: 4000,
-                },
-                {
-                  text: "Every day, thousands of people pass by its doors, each with their own unique story.",
-                  imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-                  duration: 4000,
-                }
-              ]
-            };
-            onBuildingSelect(dynamicBuilding);
+                id: pickedObject.pickId || Math.random().toString(),
+                name: name.charAt(0).toUpperCase() + name.slice(1),
+                address: targetLocationRef.current?.name || "Unknown Location",
+                coordinates: { lat, lng, height: featureHeight || 0 },
+                yearBuilt: "Unknown",
+                originalUse: featureType || "Commercial/Residential",
+                currentUse: featureType || "Commercial/Residential",
+                summary: `You discovered a building in the heart of the city${heightStr}`,
+                timelineEvents: [],
+                images: [],
+                generatedStory: "",
+                storyScenes: [
+                  {
+                    text: "This building stands as a testament to the city's continuous growth and evolution.",
+                    imageUrl: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&q=80",
+                    duration: 4000,
+                  },
+                  {
+                    text: "Every day, thousands of people pass by its doors, each with their own unique story.",
+                    imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
+                    duration: 4000,
+                  }
+                ]
+              };
+              onBuildingSelectRef.current(dynamicBuilding);
           }
         }
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -166,7 +182,7 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
         viewerRef.current = null;
       }
     };
-  }, [targetLocation, onBuildingSelect]);
+  }, []); // Remove targetLocation and onBuildingSelect from dependencies so it only runs ONCE
 
   return (
     <div 
