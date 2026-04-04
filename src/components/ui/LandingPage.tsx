@@ -10,12 +10,14 @@ import {
   Globe as GlobeIcon,
   MousePointer,
   BookOpen,
+  Compass,
 } from "lucide-react";
 
 const CobeGlobe = dynamic(() => import("@/components/Globe"), { ssr: false });
 
 interface LandingPageProps {
   onLocationSelect: (location: { lat: number; lng: number; name: string }) => void;
+  onJourneySelect: (location: { lat: number; lng: number; name: string }) => void;
 }
 
 const CITY_CHIPS = [
@@ -41,10 +43,11 @@ const STEPS = [
   },
 ];
 
-export default function LandingPage({ onLocationSelect }: LandingPageProps) {
+export default function LandingPage({ onLocationSelect, onJourneySelect }: LandingPageProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<{ description: string }[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isJourneyLoading, setIsJourneyLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -110,6 +113,28 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
     e.preventDefault();
     if (query.trim()) {
       handleSelectLocation(query);
+    }
+  };
+
+  const handleJourneyFor = async (address: string) => {
+    setIsJourneyLoading(true);
+    setShowDropdown(false);
+    setQuery(address);
+
+    try {
+      const res = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`);
+      const data = await res.json();
+
+      if (data.lat && data.lng) {
+        onJourneySelect({ lat: data.lat, lng: data.lng, name: data.name });
+      } else {
+        alert("Location not found. Please try a different search term.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error searching for location.");
+    } finally {
+      setIsJourneyLoading(false);
     }
   };
 
@@ -205,17 +230,33 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
                 <div className="max-h-64 overflow-y-auto">
                   {suggestions.length > 0 ? (
                     suggestions.map((suggestion, idx) => (
-                      <button
+                      <div
                         key={idx}
-                        type="button"
-                        onClick={() => handleSelectLocation(suggestion.description)}
-                        className="w-full text-left px-6 py-4 hover:bg-black/5 transition-colors flex items-center space-x-3 border-b border-black/5 last:border-b-0"
+                        className="flex items-center border-b border-black/5 last:border-b-0"
                       >
-                        <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-700 truncate">
-                          {suggestion.description}
-                        </span>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectLocation(suggestion.description)}
+                          className="flex-1 text-left px-6 py-4 hover:bg-black/5 transition-colors flex items-center space-x-3 min-w-0"
+                        >
+                          <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                          <span className="text-gray-700 truncate">{suggestion.description}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleJourneyFor(suggestion.description)}
+                          disabled={isJourneyLoading}
+                          title={`Take me on a journey to ${suggestion.description}`}
+                          className="group flex-shrink-0 flex items-center gap-1.5 mr-3 px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600 hover:bg-indigo-100 hover:border-indigo-300 transition-all text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isJourneyLoading ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Compass className="w-3.5 h-3.5 group-hover:rotate-45 transition-transform duration-500" />
+                          )}
+                          Journey
+                        </button>
+                      </div>
                     ))
                   ) : (
                     <div className="px-6 py-4 text-gray-400 text-sm italic">

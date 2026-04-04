@@ -18,6 +18,7 @@ export default function Home() {
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [isStoryPlaying, setIsStoryPlaying] = useState(false);
   const [activeStoryScenes, setActiveStoryScenes] = useState<StoryScene[]>([]);
+  const [journeyLocation, setJourneyLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
 
   // Pulse state
   const [isPulseOpen, setIsPulseOpen] = useState(false);
@@ -84,7 +85,14 @@ export default function Home() {
     <main className="relative w-full h-screen overflow-hidden bg-black">
       <AnimatePresence mode="wait">
         {!exploreLocation ? (
-          <LandingPage key="landing" onLocationSelect={setExploreLocation} />
+          <LandingPage
+            key="landing"
+            onLocationSelect={setExploreLocation}
+            onJourneySelect={(loc) => {
+              setJourneyLocation(loc);
+              setExploreLocation(loc);
+            }}
+          />
         ) : (
           <motion.div
             key="map"
