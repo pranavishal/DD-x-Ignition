@@ -2,79 +2,118 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import CesiumScene from "@/components/map/CesiumScene";
-import Panel from "@/components/ui/Panel";
-import StoryModal from "@/components/ui/StoryModal";
+import dynamic from "next/dynamic";
 import LandingPage from "@/components/ui/LandingPage";
-import { Building, StoryScene } from "@/types";
+import TabNav, { TabId } from "@/components/ui/TabNav";
+
+// CesiumJS uses window/document — must be client-side only, never SSR'd
+const CesiumScene = dynamic(
+  () => import("@/components/map/CesiumScene"),
+  { ssr: false }
+);
 
 export default function Home() {
-  const [exploreLocation, setExploreLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
-  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
-  const [isStoryPlaying, setIsStoryPlaying] = useState(false);
-  const [activeStoryScenes, setActiveStoryScenes] = useState<StoryScene[]>([]);
-  const [activeAudioUrl, setActiveAudioUrl] = useState<string | undefined>(undefined);
+  const [exploreLocation, setExploreLocation] = useState<{
+    lat: number;
+    lng: number;
+    name: string;
+  } | null>(null);
+  const [activeTab, setActiveTab] = useState<TabId>("map");
 
   return (
-    <main className="relative w-full h-screen overflow-hidden bg-black">
+    <main className="relative w-full h-screen overflow-hidden bg-[#0a0a0f]">
       <AnimatePresence mode="wait">
         {!exploreLocation ? (
+          // ── Landing / Search ──────────────────────────────────────────────
           <LandingPage key="landing" onLocationSelect={setExploreLocation} />
         ) : (
-          <motion.div 
-            key="map" 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
+          // ── Main App with Tab Navigation ─────────────────────────────────
+          <motion.div
+            key="app"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             className="absolute inset-0"
           >
-            {/* 3D Map Background */}
-            <CesiumScene 
-              targetLocation={exploreLocation} 
-              onBuildingSelect={(building) => setSelectedBuilding(building)} 
-            />
-
-            {/* Small Header Overlay */}
-            <div className="absolute top-0 left-0 w-full p-6 pointer-events-none z-10 flex justify-between items-start">
-              <div className="max-w-md">
-                <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg mb-1">
+            {/* Location header — visible on all tabs */}
+            <div className="absolute top-0 left-0 w-full p-4 pointer-events-none z-10
+                            flex justify-between items-start">
+              <div>
+                <h1 className="text-xl font-bold text-white drop-shadow-lg">
                   {exploreLocation.name}
                 </h1>
-                <p className="text-sm text-white/90 drop-shadow-md bg-black/40 inline-block px-3 py-1 rounded-full backdrop-blur-sm">
-                  Click any building to uncover its story.
-                </p>
+                {activeTab === "map" && (
+                  <p className="text-xs text-white/70 mt-0.5 bg-black/40 inline-block
+                                px-2.5 py-1 rounded-full backdrop-blur-sm">
+                    Click any building to explore
+                  </p>
+                )}
               </div>
-              
-              <button 
+              <button
                 onClick={() => {
                   setExploreLocation(null);
-                  setSelectedBuilding(null);
+                  setActiveTab("map");
                 }}
-                className="pointer-events-auto bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-full backdrop-blur-md transition-colors text-sm font-medium"
+                className="pointer-events-auto bg-white/10 hover:bg-white/20
+                           border border-white/20 text-white px-3 py-1.5
+                           rounded-full backdrop-blur-md transition-colors
+                           text-xs font-medium"
               >
                 Change Location
               </button>
             </div>
 
-            {/* Slide-out Panel */}
-            <Panel 
-              building={selectedBuilding} 
-              onClose={() => setSelectedBuilding(null)} 
-              onPlayStory={(scenes, audioUrl) => {
-                setActiveStoryScenes(scenes);
-                setActiveAudioUrl(audioUrl);
-                setIsStoryPlaying(true);
-              }}
-            />
+            {/* ── MAP TAB (Engineer 1) ──────────────────────────────────── */}
+            {/*
+              Using block/hidden rather than conditional rendering so the Cesium
+              viewer stays mounted when switching tabs — remounting is expensive
+              and causes a flash.
+            */}
+            <div className={`absolute inset-0 ${activeTab === "map" ? "block" : "hidden"}`}>
+              <CesiumScene targetLocation={exploreLocation} />
+            </div>
 
-            {/* Full Screen Story Modal */}
-            <AnimatePresence>
-              {isStoryPlaying && selectedBuilding && (
-                <StoryModal 
-                  building={{ ...selectedBuilding, storyScenes: activeStoryScenes, audioUrl: activeAudioUrl }} 
-                  onClose={() => setIsStoryPlaying(false)} 
-                />
-              )}
-            </AnimatePresence>
+            {/* ── JOURNEYS TAB (Engineer 2) ─────────────────────────────── */}
+            <div
+              className={`absolute inset-0 flex items-center justify-center
+                          ${activeTab === "journeys" ? "block" : "hidden"}`}
+            >
+              <div
+                id="journeys-root"
+                className="flex h-full w-full items-center justify-center
+                           text-gray-500 text-sm"
+              >
+                Journeys — Engineer 2
+              </div>
+            </div>
+
+            {/* ── RENTALS TAB (Engineer 3) ──────────────────────────────── */}
+            <div
+              className={`absolute inset-0 ${activeTab === "rentals" ? "block" : "hidden"}`}
+            >
+              <div
+                id="rentals-root"
+                className="flex h-full w-full items-center justify-center
+                           text-gray-500 text-sm"
+              >
+                Rentals — Engineer 3
+              </div>
+            </div>
+
+            {/* ── PULSE TAB (Engineer 4) ────────────────────────────────── */}
+            <div
+              className={`absolute inset-0 ${activeTab === "pulse" ? "block" : "hidden"}`}
+            >
+              <div
+                id="pulse-root"
+                className="flex h-full w-full items-center justify-center
+                           text-gray-500 text-sm"
+              >
+                Pulse — Engineer 4
+              </div>
+            </div>
+
+            {/* ── Shared Tab Bar ────────────────────────────────────────── */}
+            <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
           </motion.div>
         )}
       </AnimatePresence>
