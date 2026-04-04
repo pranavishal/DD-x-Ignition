@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Map as MapIcon, Compass, Loader2, MapPin } from "lucide-react";
+import { Search, Map as MapIcon, Compass, Loader2, MapPin, Home } from "lucide-react";
+import Link from "next/link";
 
 interface LandingPageProps {
   onLocationSelect: (location: { lat: number; lng: number; name: string }) => void;
@@ -91,6 +92,17 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
       {/* Background ambient glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-900/20 rounded-full blur-[120px]" />
+      </div>
+
+      {/* Feature nav */}
+      <div className="absolute top-6 right-6 z-20">
+        <Link
+          href="/rentals"
+          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-full backdrop-blur-md transition-colors text-sm font-medium"
+        >
+          <Home className="w-4 h-4" />
+          Find Rentals & Stays
+        </Link>
       </div>
 
       <div className="relative z-10 w-full max-w-2xl px-6 flex flex-col items-center text-center">
