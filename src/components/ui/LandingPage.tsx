@@ -205,7 +205,7 @@ export default function LandingPage({ onLocationSelect, onJourneySelect }: Landi
                         </button>
                         <button
                           type="button"
-                          onClick={() => {}}
+                          onClick={() => handleJourneyFor(suggestion.description)}
                           disabled={isJourneyLoading}
                           title={`Take me on a journey to ${suggestion.description}`}
                           className="group flex-shrink-0 flex items-center gap-1.5 mr-3 px-3 py-1.5 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/40 hover:border-indigo-400/50 hover:text-white transition-all text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
