@@ -17,6 +17,7 @@ interface PulseOverlayProps {
   onAddSpot: (spot: UniqueSpot) => void;
   cityName: string;
   defaultCoords: { lat: number; lng: number };
+  isLoading?: boolean;
 }
 
 export default function PulseOverlay({
@@ -27,6 +28,7 @@ export default function PulseOverlay({
   onAddSpot,
   cityName,
   defaultCoords,
+  isLoading,
 }: PulseOverlayProps) {
   const [activeTab, setActiveTab] = useState<"community" | "feed">("community");
   const [showAddSpot, setShowAddSpot] = useState(false);
@@ -91,6 +93,7 @@ export default function PulseOverlay({
             spots={spots}
             onLike={onLikeSpot}
             onAddSpot={() => setShowAddSpot(true)}
+            isLoading={isLoading}
           />
         ) : (
           <NeighbourhoodFeed cityName={cityName} />

@@ -31,6 +31,14 @@ export interface Building {
   audioUrl?: string; // Optional audio track for the story
 }
 
+export interface UserProfile {
+  id: string;
+  username: string;
+  avatarUrl: string;
+  bio: string;
+  spotsCount: number;
+}
+
 export interface UniqueSpot {
   id: string;
   name: string;
@@ -42,6 +50,7 @@ export interface UniqueSpot {
   likes: number;
   couponUnlocked: boolean;
   submittedAt: string;
+  submittedBy: UserProfile;
 }
 
 export interface JourneyLandmark {

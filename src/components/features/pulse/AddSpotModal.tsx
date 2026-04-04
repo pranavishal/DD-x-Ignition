@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin } from "lucide-react";
 import { UniqueSpot } from "@/types";
+import { YOU_PROFILE } from "@/data/mockProfiles";
 
 interface AddSpotModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ export default function AddSpotModal({
       likes: 0,
       couponUnlocked: false,
       submittedAt: new Date().toISOString(),
+      submittedBy: YOU_PROFILE,
     };
 
     onSubmit(spot);

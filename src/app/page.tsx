@@ -13,6 +13,7 @@ import PulseOverlay from "@/components/features/pulse/PulseOverlay";
 import CouponCelebration from "@/components/features/pulse/CouponCelebration";
 import { Building, StoryScene, UniqueSpot, JourneyData } from "@/types";
 import { getSeedSpots } from "@/data/mockSpots";
+import { getRandomProfile } from "@/data/mockProfiles";
 import { Loader2, Compass } from "lucide-react";
 
 export default function Home() {
@@ -32,12 +33,34 @@ export default function Home() {
   const [isPulseOpen, setIsPulseOpen] = useState(false);
   const [spots, setSpots] = useState<UniqueSpot[]>([]);
   const [celebratingSpot, setCelebratingSpot] = useState<UniqueSpot | null>(null);
+  const [isFetchingSpots, setIsFetchingSpots] = useState(false);
 
-  // Seed spots when location changes
+  // Fetch real nearby places when location changes
   useEffect(() => {
-    if (exploreLocation) {
-      setSpots(getSeedSpots(exploreLocation.name));
-    }
+    if (!exploreLocation) return;
+
+    const fetchNearbySpots = async () => {
+      setIsFetchingSpots(true);
+      try {
+        const res = await fetch("/api/nearby-places", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat: exploreLocation.lat, lng: exploreLocation.lng }),
+        });
+        const data = await res.json();
+        const spotsWithProfiles: UniqueSpot[] = data.spots.map((spot: Omit<UniqueSpot, "submittedBy"> & { submittedBy?: UniqueSpot["submittedBy"] }) => ({
+          ...spot,
+          submittedBy: spot.submittedBy || getRandomProfile(),
+        }));
+        setSpots(spotsWithProfiles);
+      } catch {
+        setSpots(getSeedSpots(exploreLocation.name));
+      } finally {
+        setIsFetchingSpots(false);
+      }
+    };
+
+    fetchNearbySpots();
   }, [exploreLocation]);
 
   // Fetch journey data when a journey is triggered
@@ -207,6 +230,7 @@ export default function Home() {
                   onAddSpot={handleAddSpot}
                   cityName={exploreLocation.name}
                   defaultCoords={{ lat: exploreLocation.lat, lng: exploreLocation.lng }}
+                  isLoading={isFetchingSpots}
                 />
               )}
             </AnimatePresence>

@@ -56,7 +56,17 @@ export default function SpotCard({ spot, onLike }: SpotCardProps) {
       {/* Content */}
       <div className="p-4">
         <h3 className="text-white font-bold text-base mb-1">{spot.name}</h3>
-        <p className="text-white/60 text-sm line-clamp-2 mb-3">{spot.description}</p>
+        <p className="text-white/60 text-sm line-clamp-2 mb-2">{spot.description}</p>
+
+        {/* Submitted By */}
+        <div className="flex items-center gap-2 mb-3">
+          <img
+            src={spot.submittedBy.avatarUrl}
+            alt={spot.submittedBy.username}
+            className="w-5 h-5 rounded-full object-cover"
+          />
+          <span className="text-white/50 text-xs">{spot.submittedBy.username}</span>
+        </div>
 
         {/* Like Row */}
         <div className="flex items-center justify-between">
