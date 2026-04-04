@@ -17,7 +17,7 @@ async function generateHistoricalImage(
       size: "1024x1024",
       style: "natural",
     });
-    return response.data[0].url || fallbackUrl;
+    return response.data?.[0]?.url || fallbackUrl;
   } catch (e) {
     console.error("DALL-E generation failed:", e);
     return fallbackUrl;
@@ -45,16 +45,16 @@ export async function POST(request: Request) {
 
     // 1. Generate the 3-part script
     const scriptPrompt = `
-      You are a historical documentary narrator. 
+      You are a historical documentary narrator.
       I am looking at a building located at coordinates ${lat}, ${lng}.
       ${name !== "Unknown Building" ? `It is known as or near "${name}".` : ""}
       ${type ? `It is a ${type} building.` : ""}
       ${context ? `Here is verified information about this building: ${context}` : ""}
-      
+
       Write a 3-part short documentary script about the history of this specific building, or if it's a generic building, the history of this specific neighborhood/block in the city.
       Use the verified information provided to ground your narrative in real facts.
       Each part should be 2-3 sentences — concise enough for a ~15 second voiceover per part.
-      
+
       Return EXACTLY a JSON array of 3 strings. No markdown formatting, no code blocks, just the raw JSON array.
       Example: ["In the early 1900s, this area was...", "During the post-war boom...", "Today, it stands as..."]
     `;
