@@ -1,6 +1,8 @@
 import { UniqueSpot } from "@/types";
+import { mockProfiles } from "./mockProfiles";
 
 export function getSeedSpots(cityName: string): UniqueSpot[] {
+  const p = mockProfiles;
   return [
     {
       id: "spot-1",
@@ -13,6 +15,7 @@ export function getSeedSpots(cityName: string): UniqueSpot[] {
       likes: 49,
       couponUnlocked: false,
       submittedAt: new Date(Date.now() - 86400000).toISOString(),
+      submittedBy: p[0],
     },
     {
       id: "spot-2",
@@ -25,6 +28,7 @@ export function getSeedSpots(cityName: string): UniqueSpot[] {
       likes: 34,
       couponUnlocked: false,
       submittedAt: new Date(Date.now() - 172800000).toISOString(),
+      submittedBy: p[1],
     },
     {
       id: "spot-3",
@@ -37,6 +41,7 @@ export function getSeedSpots(cityName: string): UniqueSpot[] {
       likes: 72,
       couponUnlocked: true,
       submittedAt: new Date(Date.now() - 604800000).toISOString(),
+      submittedBy: p[2],
     },
     {
       id: "spot-4",
@@ -49,6 +54,7 @@ export function getSeedSpots(cityName: string): UniqueSpot[] {
       likes: 28,
       couponUnlocked: false,
       submittedAt: new Date(Date.now() - 259200000).toISOString(),
+      submittedBy: p[3],
     },
     {
       id: "spot-5",
@@ -61,6 +67,7 @@ export function getSeedSpots(cityName: string): UniqueSpot[] {
       likes: 15,
       couponUnlocked: false,
       submittedAt: new Date(Date.now() - 432000000).toISOString(),
+      submittedBy: p[4],
     },
     {
       id: "spot-6",
@@ -73,6 +80,7 @@ export function getSeedSpots(cityName: string): UniqueSpot[] {
       likes: 61,
       couponUnlocked: true,
       submittedAt: new Date(Date.now() - 1209600000).toISOString(),
+      submittedBy: p[5],
     },
     {
       id: "spot-7",
@@ -85,6 +93,7 @@ export function getSeedSpots(cityName: string): UniqueSpot[] {
       likes: 43,
       couponUnlocked: false,
       submittedAt: new Date(Date.now() - 345600000).toISOString(),
+      submittedBy: p[6],
     },
     {
       id: "spot-8",
@@ -97,6 +106,7 @@ export function getSeedSpots(cityName: string): UniqueSpot[] {
       likes: 55,
       couponUnlocked: true,
       submittedAt: new Date(Date.now() - 518400000).toISOString(),
+      submittedBy: p[7],
     },
     {
       id: "spot-9",
@@ -109,6 +119,7 @@ export function getSeedSpots(cityName: string): UniqueSpot[] {
       likes: 8,
       couponUnlocked: false,
       submittedAt: new Date(Date.now() - 691200000).toISOString(),
+      submittedBy: p[0],
     },
     {
       id: "spot-10",
@@ -121,6 +132,7 @@ export function getSeedSpots(cityName: string): UniqueSpot[] {
       likes: 37,
       couponUnlocked: false,
       submittedAt: new Date(Date.now() - 864000000).toISOString(),
+      submittedBy: p[1],
     },
   ];
 }
