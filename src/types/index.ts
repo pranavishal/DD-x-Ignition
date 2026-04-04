@@ -7,7 +7,8 @@ export interface TimelineEvent {
 export interface StoryScene {
   text: string;
   imageUrl: string;
-  duration: number; // in milliseconds
+  duration: number; // fallback in ms, used only when audioUrl is absent
+  audioUrl?: string; // per-scene narration audio (data URI)
 }
 
 export interface Building {

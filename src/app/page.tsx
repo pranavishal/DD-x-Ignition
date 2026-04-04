@@ -13,7 +13,6 @@ export default function Home() {
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [isStoryPlaying, setIsStoryPlaying] = useState(false);
   const [activeStoryScenes, setActiveStoryScenes] = useState<StoryScene[]>([]);
-  const [activeAudioUrl, setActiveAudioUrl] = useState<string | undefined>(undefined);
 
   return (
     <main className="relative w-full h-screen overflow-hidden bg-black">
@@ -59,9 +58,8 @@ export default function Home() {
             <Panel 
               building={selectedBuilding} 
               onClose={() => setSelectedBuilding(null)} 
-              onPlayStory={(scenes, audioUrl) => {
+              onPlayStory={(scenes) => {
                 setActiveStoryScenes(scenes);
-                setActiveAudioUrl(audioUrl);
                 setIsStoryPlaying(true);
               }}
             />
@@ -70,7 +68,7 @@ export default function Home() {
             <AnimatePresence>
               {isStoryPlaying && selectedBuilding && (
                 <StoryModal 
-                  building={{ ...selectedBuilding, storyScenes: activeStoryScenes, audioUrl: activeAudioUrl }} 
+                  building={{ ...selectedBuilding, storyScenes: activeStoryScenes }} 
                   onClose={() => setIsStoryPlaying(false)} 
                 />
               )}
