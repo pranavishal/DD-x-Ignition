@@ -6,13 +6,15 @@ import { Building } from "../../types";
 interface CesiumSceneProps {
   targetLocation: { lat: number; lng: number; name: string } | null;
   onBuildingSelect: (building: Building) => void;
+  onViewerReady?: (viewer: any) => void;
 }
 
-export default function CesiumScene({ targetLocation, onBuildingSelect }: CesiumSceneProps) {
+export default function CesiumScene({ targetLocation, onBuildingSelect, onViewerReady }: CesiumSceneProps) {
   const cesiumContainer = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const targetLocationRef = useRef(targetLocation);
   const onBuildingSelectRef = useRef(onBuildingSelect);
+  const onViewerReadyRef = useRef(onViewerReady);
 
   // Keep refs updated so the click handler always has the latest values without needing to be recreated
   useEffect(() => {
@@ -22,6 +24,10 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
   useEffect(() => {
     onBuildingSelectRef.current = onBuildingSelect;
   }, [onBuildingSelect]);
+
+  useEffect(() => {
+    onViewerReadyRef.current = onViewerReady;
+  }, [onViewerReady]);
 
   useEffect(() => {
     let checkInterval: NodeJS.Timeout;
@@ -62,6 +68,7 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
       viewer.scene.pickTranslucentDepth = true;
       
       viewerRef.current = viewer;
+      onViewerReadyRef.current?.(viewer);
 
       // Add OSM Buildings using the modern async method now that we have a token
       Cesium.createOsmBuildingsAsync().then((buildingsTileset: any) => {
