@@ -164,15 +164,30 @@ export default function Panel({ building, onClose, onPlayStory }: PanelProps) {
             {/* Building name overlaid on hero image */}
             <div className="absolute bottom-0 left-0 right-0 p-5">
               <AnimatePresence mode="wait">
-                <motion.h2
-                  key={displayName}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  className="text-2xl font-bold text-white drop-shadow-lg leading-tight"
-                >
-                  {displayName}
-                </motion.h2>
+                {isLoading ? (
+                  <motion.div
+                    key="loading-name"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2.5"
+                  >
+                    <Loader2 className="w-5 h-5 text-white/80 animate-spin" />
+                    <span className="text-lg text-white/80 font-medium">
+                      Identifying building...
+                    </span>
+                  </motion.div>
+                ) : (
+                  <motion.h2
+                    key={displayName}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    className="text-2xl font-bold text-white drop-shadow-lg leading-tight"
+                  >
+                    {displayName}
+                  </motion.h2>
+                )}
               </AnimatePresence>
             </div>
           </div>
