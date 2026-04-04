@@ -1,4 +1,4 @@
-# Guidebook MVP — AI + 3D Map Smart Guide (DD × Ignition)
+# GLUIDEBOOK — AI + 3D Map Smart Guide (DD × Ignition)
 
 An AI-powered, map-first guide that helps people explore places with confidence.
 Tell it what you’re into, how much time you have, and where you are — it builds a personalized plan and shows it on an interactive 3D map.
