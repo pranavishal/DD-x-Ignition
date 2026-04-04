@@ -29,3 +29,25 @@ export interface Building {
   storyScenes: StoryScene[];
   audioUrl?: string; // Optional audio track for the story
 }
+
+export interface UniqueSpot {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  photoUrl: string;
+  category: 'food' | 'art' | 'nature' | 'nightlife' | 'hidden-gem' | 'historic';
+  coordinates: { lat: number; lng: number };
+  likes: number;
+  couponUnlocked: boolean;
+  submittedAt: string;
+}
+
+export interface PulseFeedItem {
+  id: string;
+  type: 'event' | 'news' | 'social' | 'live-update';
+  title: string;
+  description: string;
+  source: string;
+  timestamp: string;
+}

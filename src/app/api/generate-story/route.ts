@@ -63,7 +63,7 @@ export async function POST(request: Request) {
           size: "1024x1024",
           style: "natural", // More photorealistic
         });
-        return imageResponse.data[0].url || fallbackUrl;
+        return imageResponse.data?.[0]?.url || fallbackUrl;
       } catch (e) {
         console.error("DALL-E generation failed:", e);
         return fallbackUrl;
