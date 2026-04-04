@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Search, Map as MapIcon, Compass, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Map as MapIcon, Compass, Loader2, MapPin } from "lucide-react";
 
 interface LandingPageProps {
   onLocationSelect: (location: { lat: number; lng: number; name: string }) => void;
@@ -10,28 +10,58 @@ interface LandingPageProps {
 
 export default function LandingPage({ onLocationSelect }: LandingPageProps) {
   const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-    
-    setIsSearching(true);
-    try {
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-      if (!apiKey) {
-        alert("Google Maps API Key is missing in .env.local");
-        setIsSearching(false);
-        return;
+  // Debounced autocomplete fetch
+  useEffect(() => {
+    if (!query.trim()) {
+      setSuggestions([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const fetchSuggestions = async () => {
+      try {
+        const res = await fetch(`/api/autocomplete?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (data.predictions) {
+          setSuggestions(data.predictions);
+          setShowDropdown(true);
+        }
+      } catch (err) {
+        console.error("Autocomplete error:", err);
       }
+    };
 
-      const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${apiKey}`);
+    const timeoutId = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(timeoutId);
+  }, [query]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelectLocation = async (address: string) => {
+    setIsSearching(true);
+    setShowDropdown(false);
+    setQuery(address);
+    
+    try {
+      const res = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`);
       const data = await res.json();
       
-      if (data.results && data.results.length > 0) {
-        const { lat, lng } = data.results[0].geometry.location;
-        const name = data.results[0].formatted_address;
-        onLocationSelect({ lat, lng, name });
+      if (data.lat && data.lng) {
+        onLocationSelect({ lat: data.lat, lng: data.lng, name: data.name });
       } else {
         alert("Location not found. Please try a different search term.");
       }
@@ -40,6 +70,13 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
       alert("Error searching for location.");
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      handleSelectLocation(query);
     }
   };
 
@@ -71,23 +108,29 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
           </p>
         </motion.div>
 
-        <motion.form 
+        <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}
-          onSubmit={handleSearch} 
-          className="w-full mb-8"
+          className="w-full relative"
+          ref={dropdownRef}
         >
-          <div className="relative group">
+          <form onSubmit={handleSearchSubmit} className="relative group z-20">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Search className="h-6 w-6 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
             </div>
             <input
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setShowDropdown(true);
+              }}
+              onFocus={() => {
+                if (query.trim()) setShowDropdown(true);
+              }}
               placeholder="Search for a city, landmark, or address..."
-              className="w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 rounded-2xl py-5 pl-14 pr-32 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white/15 transition-all backdrop-blur-md"
+              className={`w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 py-5 pl-14 pr-32 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white/15 transition-all backdrop-blur-md ${showDropdown && (suggestions.length > 0 || query.trim()) ? 'rounded-t-2xl border-b-0' : 'rounded-2xl'}`}
             />
             <div className="absolute inset-y-0 right-2 flex items-center">
               <button
@@ -98,29 +141,51 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
                 {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : "Explore"}
               </button>
             </div>
-          </div>
-        </motion.form>
+          </form>
 
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <div className="flex items-center space-x-4 text-sm text-gray-500">
-            <span className="h-px w-12 bg-gray-800" />
-            <span>OR</span>
-            <span className="h-px w-12 bg-gray-800" />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => alert("Journey mode coming soon!")}
-            className="mt-8 group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-transparent border border-white/20 rounded-2xl hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 overflow-hidden"
-          >
-            <div className="absolute inset-0 w-full h-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-black" />
-            <Compass className="w-5 h-5 mr-2 group-hover:rotate-45 transition-transform duration-500" />
-            Take me on a journey
-          </button>
+          {/* Autocomplete Dropdown */}
+          <AnimatePresence>
+            {showDropdown && query.trim() && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-full left-0 w-full bg-gray-900/95 backdrop-blur-xl border border-white/20 border-t-0 rounded-b-2xl overflow-hidden z-10 shadow-2xl"
+              >
+                <div className="max-h-64 overflow-y-auto">
+                  {suggestions.length > 0 ? (
+                    suggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectLocation(suggestion.description)}
+                        className="w-full text-left px-6 py-4 hover:bg-white/10 transition-colors flex items-center space-x-3 border-b border-white/5 last:border-b-0"
+                      >
+                        <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-200 truncate">{suggestion.description}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-6 py-4 text-gray-400 text-sm italic">
+                      {isSearching ? "Searching..." : "Type to search..."}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Take me on a journey integrated action */}
+                <div className="bg-blue-900/40 p-4 border-t border-blue-500/30">
+                  <button
+                    type="button"
+                    onClick={() => alert("Journey mode coming soon!")}
+                    className="w-full group relative inline-flex items-center justify-center px-6 py-3 font-bold text-blue-100 transition-all duration-200 bg-blue-600/20 border border-blue-500/50 rounded-xl hover:bg-blue-600/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 overflow-hidden"
+                  >
+                    <Compass className="w-5 h-5 mr-2 group-hover:rotate-45 transition-transform duration-500 text-blue-400" />
+                    Take me on a journey to "{query}"
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>
     </motion.div>
