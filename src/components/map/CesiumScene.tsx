@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import { Building } from "../../types";
-import { buildings } from "../../data/buildings";
 
 interface CesiumSceneProps {
   targetLocation: { lat: number; lng: number; name: string } | null;
@@ -134,38 +133,32 @@ export default function CesiumScene({ targetLocation, onBuildingSelect }: Cesium
             // We no longer move the camera when a building is clicked.
             // It behaves exactly like original Cesium - you click, the UI opens, the camera stays put.
 
-            // If it's the Empire State Building, use our rich hardcoded data
-            if (name.includes("Empire State")) {
-              onBuildingSelectRef.current(buildings[0]);
-            } else {
-              // Generate a dynamic mock building object on the fly for any clicked building
-              const dynamicBuilding: Building = {
+            const dynamicBuilding: Building = {
                 id: pickedObject.pickId || Math.random().toString(),
-                name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalize
+                name: name.charAt(0).toUpperCase() + name.slice(1),
                 address: targetLocationRef.current?.name || "Unknown Location",
                 coordinates: { lat, lng, height: featureHeight || 0 },
-              yearBuilt: "Unknown",
-              originalUse: featureType || "Commercial/Residential",
-              currentUse: featureType || "Commercial/Residential",
-              summary: `You discovered a building in the heart of the city${heightStr}`,
-              timelineEvents: [],
-              images: [],
-              generatedStory: "",
-              storyScenes: [
-                {
-                  text: "This building stands as a testament to the city's continuous growth and evolution.",
-                  imageUrl: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&q=80",
-                  duration: 4000,
-                },
-                {
-                  text: "Every day, thousands of people pass by its doors, each with their own unique story.",
-                  imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-                  duration: 4000,
-                }
-              ]
-            };
-            onBuildingSelectRef.current(dynamicBuilding);
-          }
+                yearBuilt: "Unknown",
+                originalUse: featureType || "Commercial/Residential",
+                currentUse: featureType || "Commercial/Residential",
+                summary: `You discovered a building in the heart of the city${heightStr}`,
+                timelineEvents: [],
+                images: [],
+                generatedStory: "",
+                storyScenes: [
+                  {
+                    text: "This building stands as a testament to the city's continuous growth and evolution.",
+                    imageUrl: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=800&q=80",
+                    duration: 4000,
+                  },
+                  {
+                    text: "Every day, thousands of people pass by its doors, each with their own unique story.",
+                    imageUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
+                    duration: 4000,
+                  }
+                ]
+              };
+              onBuildingSelectRef.current(dynamicBuilding);
           }
         }
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
