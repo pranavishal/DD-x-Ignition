@@ -25,7 +25,7 @@ export default function StoryModal({ building, onClose }: StoryModalProps) {
         >
           <X className="w-6 h-6" />
         </button>
-        <StoryPlayer scenes={building.storyScenes} audioUrl={building.audioUrl} />
+        <StoryPlayer scenes={building.storyScenes} />
       </motion.div>
     </div>
   );
