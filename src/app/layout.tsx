@@ -6,7 +6,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Reimagined Guidebook MVP",
+  title: "Urban Marble",
   description: "Explore the hidden story of your city",
 };
 
