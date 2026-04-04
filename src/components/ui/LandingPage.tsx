@@ -7,12 +7,14 @@ import Link from "next/link";
 
 interface LandingPageProps {
   onLocationSelect: (location: { lat: number; lng: number; name: string }) => void;
+  onJourneySelect: (location: { lat: number; lng: number; name: string }) => void;
 }
 
-export default function LandingPage({ onLocationSelect }: LandingPageProps) {
+export default function LandingPage({ onLocationSelect, onJourneySelect }: LandingPageProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isJourneyLoading, setIsJourneyLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -78,6 +80,28 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
     e.preventDefault();
     if (query.trim()) {
       handleSelectLocation(query);
+    }
+  };
+
+  const handleJourneyFor = async (address: string) => {
+    setIsJourneyLoading(true);
+    setShowDropdown(false);
+    setQuery(address);
+
+    try {
+      const res = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`);
+      const data = await res.json();
+
+      if (data.lat && data.lng) {
+        onJourneySelect({ lat: data.lat, lng: data.lng, name: data.name });
+      } else {
+        alert("Location not found. Please try a different search term.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error searching for location.");
+    } finally {
+      setIsJourneyLoading(false);
     }
   };
 
@@ -167,33 +191,39 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
                 <div className="max-h-64 overflow-y-auto">
                   {suggestions.length > 0 ? (
                     suggestions.map((suggestion, idx) => (
-                      <button
+                      <div
                         key={idx}
-                        type="button"
-                        onClick={() => handleSelectLocation(suggestion.description)}
-                        className="w-full text-left px-6 py-4 hover:bg-white/10 transition-colors flex items-center space-x-3 border-b border-white/5 last:border-b-0"
+                        className="flex items-center border-b border-white/5 last:border-b-0"
                       >
-                        <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-200 truncate">{suggestion.description}</span>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectLocation(suggestion.description)}
+                          className="flex-1 text-left px-6 py-4 hover:bg-white/10 transition-colors flex items-center space-x-3 min-w-0"
+                        >
+                          <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                          <span className="text-gray-200 truncate">{suggestion.description}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {}}
+                          disabled={isJourneyLoading}
+                          title={`Take me on a journey to ${suggestion.description}`}
+                          className="group flex-shrink-0 flex items-center gap-1.5 mr-3 px-3 py-1.5 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/40 hover:border-indigo-400/50 hover:text-white transition-all text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isJourneyLoading ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Compass className="w-3.5 h-3.5 group-hover:rotate-45 transition-transform duration-500" />
+                          )}
+                          Journey
+                        </button>
+                      </div>
                     ))
                   ) : (
                     <div className="px-6 py-4 text-gray-400 text-sm italic">
                       {isSearching ? "Searching..." : "Type to search..."}
                     </div>
                   )}
-                </div>
-                
-                {/* Take me on a journey integrated action */}
-                <div className="bg-blue-900/40 p-4 border-t border-blue-500/30">
-                  <button
-                    type="button"
-                    onClick={() => alert("Journey mode coming soon!")}
-                    className="w-full group relative inline-flex items-center justify-center px-6 py-3 font-bold text-blue-100 transition-all duration-200 bg-blue-600/20 border border-blue-500/50 rounded-xl hover:bg-blue-600/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 overflow-hidden"
-                  >
-                    <Compass className="w-5 h-5 mr-2 group-hover:rotate-45 transition-transform duration-500 text-blue-400" />
-                    Take me on a journey to "{query}"
-                  </button>
                 </div>
               </motion.div>
             )}
