@@ -1,4 +1,4 @@
-export type RentalSource = 'airbnb' | 'booking' | 'hotels' | 'zillow' | 'craigslist' | 'other';
+export type RentalSource = 'airbnb' | 'booking' | 'hotels' | 'zillow' | 'craigslist' | 'bamboo' | 'places4students' | 'other';
 
 export type RentalType = 'apartment' | 'room' | 'hotel' | 'hostel' | 'studio' | 'house';
 
