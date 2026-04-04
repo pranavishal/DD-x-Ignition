@@ -53,6 +53,22 @@ export interface UniqueSpot {
   submittedBy: UserProfile;
 }
 
+export interface JourneyLandmark {
+  name: string;
+  lat: number;
+  lng: number;
+  narration: string;
+  audioUrl?: string;
+  photoUrl?: string;
+}
+
+export interface JourneyData {
+  cityName: string;
+  intro: string;
+  landmarks: JourneyLandmark[];
+  routeCoordinates?: Array<{ lat: number; lng: number }>;
+}
+
 export interface PulseFeedItem {
   id: string;
   type: 'event' | 'news' | 'social' | 'live-update';
