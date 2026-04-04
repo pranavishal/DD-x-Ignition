@@ -4,11 +4,11 @@ import { useEffect, useRef } from "react";
 import { Building } from "../../types";
 
 interface CesiumSceneProps {
-  buildings: Building[];
+  targetLocation: { lat: number; lng: number; name: string } | null;
   onBuildingSelect: (building: Building) => void;
 }
 
-export default function CesiumScene({ buildings, onBuildingSelect }: CesiumSceneProps) {
+export default function CesiumScene({ targetLocation, onBuildingSelect }: CesiumSceneProps) {
   const cesiumContainer = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
 
@@ -44,6 +44,11 @@ export default function CesiumScene({ buildings, onBuildingSelect }: CesiumScene
         ),
       });
       
+      // Enable depth testing so we can accurately pick the 3D surface coordinates of the buildings
+      viewer.scene.globe.depthTestAgainstTerrain = false;
+      // Ensure pickPosition works correctly on 3D tiles
+      viewer.scene.pickTranslucentDepth = true;
+      
       viewerRef.current = viewer;
 
       // Add OSM Buildings using the modern async method now that we have a token
@@ -53,30 +58,38 @@ export default function CesiumScene({ buildings, onBuildingSelect }: CesiumScene
         console.error("Error loading 3D buildings:", err);
       });
 
-      // Fly to New York City on initial load
-      viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(
-          -73.9857,
-          40.7384, // Slightly south of Empire State
-          1000 // Height
-        ),
-        orientation: {
-          heading: Cesium.Math.toRadians(0.0),
-          pitch: Cesium.Math.toRadians(-30.0),
-        },
-        duration: 0, // Set to 0 to instantly load there instead of flying from space
-      });
+      // Fly to the searched location on initial load
+      if (targetLocation) {
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(
+            targetLocation.lng,
+            targetLocation.lat - 0.01, // Offset slightly south to look north
+            1500 // Height
+          ),
+          orientation: {
+            heading: Cesium.Math.toRadians(0.0),
+            pitch: Cesium.Math.toRadians(-30.0),
+          },
+          duration: 3, // Smooth flight from space
+        });
+      }
 
       // Handle Clicks on ANY building
       const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
       
-      // Disable default double-click zoom to keep the camera completely static when interacting
-      viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
-
-      // Disable default single-click behavior (which sometimes triggers a fly-to or selection indicator)
+      // Disable ALL default click behaviors that might cause the camera to move or select
       viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+      viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+      
+      // Prevent Cesium from automatically tracking or selecting entities
+      viewer.trackedEntity = undefined;
+      viewer.selectedEntity = undefined;
 
       handler.setInputAction((click: any) => {
+        // Force Cesium to drop any selection it just made behind the scenes
+        viewer.selectedEntity = undefined;
+        viewer.trackedEntity = undefined;
+        
         const pickedObject = viewer.scene.pick(click.position);
         
         if (Cesium.defined(pickedObject) && pickedObject instanceof Cesium.Cesium3DTileFeature) {
@@ -88,16 +101,27 @@ export default function CesiumScene({ buildings, onBuildingSelect }: CesiumScene
           const name = featureName || (featureType ? `A ${featureType} building` : "Unknown Building");
           const heightStr = featureHeight ? ` standing approximately ${Math.round(featureHeight)} meters tall.` : ".";
 
-          // If it's the Empire State Building, use our rich hardcoded data
-          if (name.includes("Empire State")) {
-            onBuildingSelect(buildings[0]);
-          } else {
-            // Generate a dynamic mock building object on the fly for any other building
+          // Get the actual coordinates of the clicked building to pass to the API
+          // We EXCLUSIVELY use pickEllipsoid here. 
+          // pickPosition on 3D tiles without depth testing often returns the tileset's root bounding volume center (Manhattan).
+          // pickEllipsoid mathematically calculates the exact Lat/Lng of the ground directly under the mouse cursor.
+          const cartesian = viewer.scene.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
+          
+          if (Cesium.defined(cartesian)) {
+            const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+            const lng = Cesium.Math.toDegrees(cartographic.longitude);
+            const lat = Cesium.Math.toDegrees(cartographic.latitude);
+
+            // REMOVED: viewer.camera.flyTo(...)
+            // We no longer move the camera when a building is clicked.
+            // It behaves exactly like original Cesium - you click, the UI opens, the camera stays put.
+
+            // Generate a dynamic mock building object on the fly for any clicked building
             const dynamicBuilding: Building = {
               id: pickedObject.pickId || Math.random().toString(),
               name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalize
-              address: "New York City",
-              coordinates: { lat: 40.7, lng: -74.0, height: 0 },
+              address: targetLocation?.name || "Unknown Location",
+              coordinates: { lat, lng, height: featureHeight || 0 },
               yearBuilt: "Unknown",
               originalUse: featureType || "Commercial/Residential",
               currentUse: featureType || "Commercial/Residential",
@@ -142,7 +166,7 @@ export default function CesiumScene({ buildings, onBuildingSelect }: CesiumScene
         viewerRef.current = null;
       }
     };
-  }, [buildings, onBuildingSelect]);
+  }, [targetLocation, onBuildingSelect]);
 
   return (
     <div 
