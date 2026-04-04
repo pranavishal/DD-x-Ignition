@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { image } = await req.json();
+  const { image, lat, lng } = await req.json();
 
   if (!image) {
     return NextResponse.json({ error: "No image provided" }, { status: 400 });
@@ -11,6 +11,10 @@ export async function POST(req: NextRequest) {
   if (!apiKey) {
     return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 });
   }
+
+  const locationHint = lat && lng
+    ? `The user is currently at GPS coordinates (${lat}, ${lng}). Use this location to help identify the building — look up what notable buildings exist at or near these coordinates.`
+    : "";
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -25,7 +29,7 @@ export async function POST(req: NextRequest) {
         {
           role: "system",
           content:
-            "You are an expert architectural historian. When shown a photo of a building, identify it and respond ONLY with valid JSON (no markdown, no code fences) in this exact format: {\"name\":\"Building Name\",\"year\":\"Year built or circa\",\"style\":\"Architectural style\",\"architect\":\"Architect name or Unknown\",\"history\":\"2-3 sentence fascinating history of this building.\",\"funFact\":\"One surprising or little-known fact.\"}. If you cannot identify the specific building, still describe its architectural style and provide context about that style of architecture in the area.",
+            `You are an expert architectural historian. ${locationHint} When shown a photo of a building, identify it and respond ONLY with valid JSON (no markdown, no code fences) in this exact format: {"name":"Building Name","year":"Year built or circa","style":"Architectural style","architect":"Architect name or Unknown","history":"2-3 sentence fascinating history of this building.","funFact":"One surprising or little-known fact."}. If you cannot identify the specific building, still describe its architectural style and provide context about that style of architecture in the area.`,
         },
         {
           role: "user",

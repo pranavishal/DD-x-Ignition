@@ -11,7 +11,10 @@ import {
   MousePointer,
   BookOpen,
   Compass,
+  Camera,
+  Home,
 } from "lucide-react";
+import Link from "next/link";
 
 const CobeGlobe = dynamic(() => import("@/components/Globe"), { ssr: false });
 
@@ -146,6 +149,24 @@ export default function LandingPage({ onLocationSelect, onJourneySelect }: Landi
       transition={{ duration: 0.8 }}
       className="absolute inset-0 z-50 bg-white text-black overflow-y-auto"
     >
+      {/* Top-right nav buttons */}
+      <div className="fixed top-5 right-5 z-50 flex items-center gap-3">
+        <Link
+          href="/rentals"
+          className="flex items-center gap-2 bg-black/5 hover:bg-black/10 border border-black/10 backdrop-blur-md px-4 py-2.5 rounded-full text-sm font-medium text-black/70 hover:text-black transition-all"
+        >
+          <Home className="w-4 h-4" />
+          Rentals
+        </Link>
+        <Link
+          href="/rentals/ar"
+          className="flex items-center gap-2 bg-black/5 hover:bg-black/10 border border-black/10 backdrop-blur-md px-4 py-2.5 rounded-full text-sm font-medium text-black/70 hover:text-black transition-all"
+        >
+          <Camera className="w-4 h-4" />
+          AR Scan
+        </Link>
+      </div>
+
       {/* Fixed centered globe */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[1]">
         <div className="w-[800px] h-[800px] pointer-events-auto">
@@ -175,15 +196,13 @@ export default function LandingPage({ onLocationSelect, onJourneySelect }: Landi
             Every building has a story. We make it visible.
           </p>
         </motion.div>
-      </section>
 
-      {/* ===== SECTION 2: SEARCH ===== */}
-      <section className="relative z-10 min-h-[60vh] flex flex-col items-center justify-center px-6 py-20">
+        {/* Search — directly below title */}
         <motion.p
           initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="text-sm text-black/40 uppercase tracking-widest font-medium mb-6"
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="text-sm text-black/40 uppercase tracking-widest font-medium mb-6 mt-10"
         >
           Start exploring
         </motion.p>

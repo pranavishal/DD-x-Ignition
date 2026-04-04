@@ -1,113 +1,135 @@
-# URBAN MARBLE — AI + 3D Map Smart Guide (DD × Ignition)
+# URBAN MARBLE — AI-Powered Architectural Explorer (DD x Ignition)
 
-An AI-powered, map-first guide that helps people explore places with confidence.
-Tell it what you’re into, how much time you have, and where you are — it builds a personalized plan and shows it on an interactive 3D map.
+The travel app for people who look up. Explore any city's architecture in 3D, scan real buildings with AR to uncover their history, find places to stay nearby, and discover hidden gems from the community.
 
-> Built for the **DD × Ignition Hackathon**.
-
----
-
-## Why this exists
-
-Planning is friction:
-- Too many tabs (maps, blogs, reviews, notes)
-- Generic “Top 10” lists that ignore your preferences
-- Hard to translate recommendations into an actual route
-
-**Guidebook** makes exploration feel like a guided experience:
-**ask → get recommendations → see them on the map → go.**
+> Built for the **DD x Ignition Hackathon**.
 
 ---
 
-## What it does (MVP)
+## Features
 
-- **Conversational discovery**: describe what you want in plain language
-- **Personalized recommendations**: tuned to time, interests, and constraints
-- **Map-first experience**: visualize places & routes directly in a 3D/interactive map
-- **Fast iteration UI**: smooth motion + clean components for demo-ready storytelling
+### 3D Globe Explorer — *Live*
+Fly into any city on a full 3D CesiumJS globe with real building geometry. Search by city, landmark, or address and the camera takes you there.
 
----
+### AR Building Scanner — *Live*
+Point your camera at any building and tap **Scan**. GPT-4o Vision identifies the building using the image + your GPS coordinates and returns its name, year built, architectural style, architect, history, and a fun fact. Works on mobile and desktop webcam.
 
-## Demo flow (suggested for presentations)
+### Rental & Stay Aggregator (Map View) — *Live (Demo Data)*
+165 clickable building clusters across NYC and Toronto showing 400 listings from Airbnb, Booking.com, Hotels.com, BambooHousing, Places4Students, Zillow, and Craigslist. Filter by type, source, price, stay length, and tags. Click a cluster to see all listings in that building with image carousels, ratings, and direct links. Currently uses curated demo data pinned to real buildings (The Plaza, Fairmont Royal York, Ritz-Carlton, etc.). Production version would integrate live listings via scraping pipelines and APIs.
 
-1. Pick a context: *campus / city / event / travel area*
-2. Ask:  
-   - “I have 2 hours, I like coffee + bookstores, keep it walkable.”  
-   - “Show me 3 must-see spots near me and a short route.”
-3. Watch the assistant generate a plan
-4. See locations highlighted on the map
-5. Adjust: “Make it cheaper”, “Less walking”, “Add one scenic stop”
+### AI Journey Generator — *Live*
+Generate a personalized cinematic experience of a city's architectural history and cultural landmarks, powered by AI storytelling.
+
+### Wanderlust Community — *Live*
+Users add hidden architectural gems. Places that get 50+ likes earn the poster a sponsor coupon. Community-sourced discoveries feed back into better journey recommendations.
 
 ---
 
-## Tech stack
+## Demo Flow
 
-- **Next.js** (App Router)
-- **TypeScript**
-- **Cesium** (3D geospatial map)
-- **OpenAI SDK** (AI assistant)
-- **Tailwind CSS**
-- **Framer Motion**
-- **Lucide Icons**
+1. **Land** — Globe spins, "Urban Marble" title with search bar
+2. **Search** — Type "Toronto" or "New York" and fly into the city
+3. **Explore** — Click buildings on the 3D globe for quick summaries
+4. **AR Scan** — Hit the AR Scan button, point at a building, get its full architectural history
+5. **Find a Stay** — Open Rentals, see 165 clusters packed across the city, filter by student housing / Airbnb / hotels
+6. **Journey** — Watch an AI-generated cinematic tour of the city's architecture
+7. **Community** — Browse hidden gems added by locals, add your own
 
 ---
 
-## Getting started
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript |
+| 3D Map | CesiumJS + OSM Buildings |
+| AI Vision | OpenAI GPT-4o (Vision API) |
+| AI Stories | OpenAI GPT-4o |
+| Styling | Tailwind CSS 4 |
+| Animation | Framer Motion |
+| Icons | Lucide React |
+
+---
+
+## Getting Started
 
 ### Prerequisites
-- Node.js (recommended: latest LTS)
-- npm / pnpm / yarn / bun
+- Node.js (LTS recommended)
+- npm
 
-### Install
+### Install & Run
 ```bash
 npm install
-```
-
-### Run dev server
-```bash
 npm run dev
 ```
 
 Open: http://localhost:3000
 
----
+### Environment Variables
 
-## Environment variables
-
-Create a `.env.local` file:
-
+Create `.env.local`:
 ```bash
-OPENAI_API_KEY=your_key_here
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
+OPENAI_API_KEY=your_openai_key
 ```
 
-> If you add map providers, routing APIs, or places datasets later, document them here as well.
+### Testing AR on Mobile
+```bash
+npx next dev --experimental-https --hostname 0.0.0.0
+```
+Then open `https://<your-ip>:3000/rentals/ar` on your phone (same WiFi network).
 
 ---
 
-## Project structure (typical Next.js)
+## Project Structure
 
-- `app/` — routes, pages, layouts
-- `components/` — UI building blocks
-- `lib/` — helpers (AI, map utilities, data fetching)
-
-*(Update this section to match the actual repo folders once finalized.)*
+```
+src/
+├── app/
+│   ├── page.tsx                    # Landing page
+│   ├── rentals/
+│   │   ├── page.tsx                # Map view with rental clusters
+│   │   ├── ar/page.tsx             # AR building scanner
+│   │   └── layout.tsx
+│   └── api/
+│       ├── vision/route.ts         # GPT-4o Vision API
+│       ├── rentals/
+│       │   ├── search/route.ts     # Rental search & filtering
+│       │   └── listing/[id]/route.ts
+│       ├── autocomplete/route.ts
+│       └── geocode/route.ts
+├── components/
+│   ├── rentals/
+│   │   ├── RentalsMap.tsx          # CesiumJS map with clusters
+│   │   ├── FilterBar.tsx           # Search filters
+│   │   ├── ListingCard.tsx         # Individual listing card
+│   │   └── ListingPanel.tsx        # Slide-out listing panel
+│   └── ui/
+│       └── LandingPage.tsx         # Hero + search + globe
+├── data/
+│   └── mock-rentals.ts             # 400 listings across 165 real buildings
+└── types/
+    └── rentals.ts                  # TypeScript interfaces
+```
 
 ---
 
-## Roadmap ideas (post-MVP)
+## Roadmap (Post-Hackathon)
 
-- Live location + “re-route me”
-- Group mode: align everyone’s preferences
-- Budget/time sliders
-- Offline “saved itinerary”
-- Places ingestion: curated datasets or partner APIs
-- Shareable link to an itinerary
+- **Live rental data** — Integrate Apify/SerpAPI scrapers for real-time Airbnb, Booking.com, and Zillow listings
+- **Continuous AR scanning** — Real-time building detection without tap-to-scan
+- **Walkability & safety heatmaps** — Overlay crime, noise, and walkability data on the map
+- **Personalized journeys** — Tailor routes to dietary needs, accessibility, interests
+- **Group mode** — Align preferences across multiple travelers
+- **Offline itineraries** — Save and share journeys for offline use
+- **Gamified community** — Leaderboards, badges, and sponsor integrations for Wanderlust contributors
 
 ---
 
 ## Team
 
-Built by the DD × Ignition team.
+Built by the DD x Ignition team.
 
 ---
 

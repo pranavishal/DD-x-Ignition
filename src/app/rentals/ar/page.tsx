@@ -184,7 +184,11 @@ export default function ARViewPage() {
       const res = await fetch("/api/vision", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: base64 }),
+        body: JSON.stringify({
+          image: base64,
+          lat: userPos?.lat,
+          lng: userPos?.lng,
+        }),
       });
 
       if (!res.ok) throw new Error("Vision API returned an error");
