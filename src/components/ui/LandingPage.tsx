@@ -1,17 +1,49 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Map as MapIcon, Compass, Loader2, MapPin, Home } from "lucide-react";
-import Link from "next/link";
+import {
+  Search,
+  Loader2,
+  MapPin,
+  Globe as GlobeIcon,
+  MousePointer,
+  BookOpen,
+} from "lucide-react";
+
+const CobeGlobe = dynamic(() => import("@/components/Globe"), { ssr: false });
 
 interface LandingPageProps {
   onLocationSelect: (location: { lat: number; lng: number; name: string }) => void;
 }
 
+const CITY_CHIPS = [
+  { label: "Toronto", query: "Toronto, ON, Canada" },
+  { label: "New York", query: "New York City, NY, USA" },
+];
+
+const STEPS = [
+  {
+    icon: GlobeIcon,
+    title: "Explore",
+    description: "Fly into any city in stunning 3D",
+  },
+  {
+    icon: MousePointer,
+    title: "Tap",
+    description: "Select any building to reveal its plaque",
+  },
+  {
+    icon: BookOpen,
+    title: "Discover",
+    description: "AI uncovers its history with photos and narration",
+  },
+];
+
 export default function LandingPage({ onLocationSelect }: LandingPageProps) {
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<{ description: string }[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -56,11 +88,11 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
     setIsSearching(true);
     setShowDropdown(false);
     setQuery(address);
-    
+
     try {
       const res = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`);
       const data = await res.json();
-      
+
       if (data.lat && data.lng) {
         onLocationSelect({ lat: data.lat, lng: data.lng, name: data.name });
       } else {
@@ -82,54 +114,56 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, filter: "blur(10px)" }}
       transition={{ duration: 0.8 }}
-      className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black text-white overflow-hidden"
+      className="absolute inset-0 z-50 bg-white text-black overflow-y-auto"
     >
-      {/* Background ambient glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-900/20 rounded-full blur-[120px]" />
+      {/* Fixed centered globe */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[1]">
+        <div className="w-[600px] h-[600px] pointer-events-auto">
+          <CobeGlobe className="w-full aspect-square" />
+        </div>
       </div>
 
-      {/* Feature nav */}
-      <div className="absolute top-6 right-6 z-20">
-        <Link
-          href="/rentals"
-          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-full backdrop-blur-md transition-colors text-sm font-medium"
-        >
-          <Home className="w-4 h-4" />
-          Find Rentals & Stays
-        </Link>
-      </div>
-
-      <div className="relative z-10 w-full max-w-2xl px-6 flex flex-col items-center text-center">
+      {/* ===== SECTION 1: HERO ===== */}
+      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6">
+        {/* Tagline */}
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-center max-w-2xl"
         >
-          <MapIcon className="w-16 h-16 mb-6 text-blue-500 mx-auto opacity-80" />
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-4">
-            Reimagine <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">History</span>
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
+            Every building has a story.{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-black to-gray-500">
+              We make it visible.
+            </span>
           </h1>
-          <p className="text-xl text-gray-400 mb-12 max-w-lg mx-auto">
-            Explore the hidden stories of any building, anywhere in the world.
+          <p className="text-lg text-gray-500 mb-2">
+            Tap any building on Earth. Read its history. Add your own.
           </p>
         </motion.div>
+      </section>
 
-        <motion.div 
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="w-full relative"
-          ref={dropdownRef}
+      {/* ===== SECTION 2: SEARCH ===== */}
+      <section className="relative z-10 min-h-[60vh] flex flex-col items-center justify-center px-6 py-20">
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="text-sm text-black/40 uppercase tracking-widest font-medium mb-6"
         >
+          Start exploring
+        </motion.p>
+
+        <div className="w-full max-w-2xl relative" ref={dropdownRef}>
           <form onSubmit={handleSearchSubmit} className="relative group z-20">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Search className="h-6 w-6 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
+              <Search className="h-6 w-6 text-gray-400 group-focus-within:text-black transition-colors" />
             </div>
             <input
               type="text"
@@ -142,13 +176,17 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
                 if (query.trim()) setShowDropdown(true);
               }}
               placeholder="Search for a city, landmark, or address..."
-              className={`w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 py-5 pl-14 pr-32 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white/15 transition-all backdrop-blur-md ${showDropdown && (suggestions.length > 0 || query.trim()) ? 'rounded-t-2xl border-b-0' : 'rounded-2xl'}`}
+              className={`w-full bg-black/5 border border-black/15 text-black placeholder-gray-400 py-5 pl-14 pr-32 text-lg focus:outline-none focus:ring-2 focus:ring-black/20 focus:bg-black/8 transition-all backdrop-blur-md ${
+                showDropdown && (suggestions.length > 0 || query.trim())
+                  ? "rounded-t-2xl border-b-0"
+                  : "rounded-2xl"
+              }`}
             />
             <div className="absolute inset-y-0 right-2 flex items-center">
               <button
                 type="submit"
                 disabled={isSearching || !query.trim()}
-                className="bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 text-white px-6 py-2.5 rounded-xl font-semibold transition-colors flex items-center"
+                className="bg-black hover:bg-gray-800 disabled:bg-black/30 text-white px-6 py-2.5 rounded-xl font-semibold transition-colors flex items-center"
               >
                 {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : "Explore"}
               </button>
@@ -162,7 +200,7 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute top-full left-0 w-full bg-gray-900/95 backdrop-blur-xl border border-white/20 border-t-0 rounded-b-2xl overflow-hidden z-10 shadow-2xl"
+                className="absolute top-full left-0 w-full bg-white/95 backdrop-blur-xl border border-black/15 border-t-0 rounded-b-2xl overflow-hidden z-10 shadow-2xl"
               >
                 <div className="max-h-64 overflow-y-auto">
                   {suggestions.length > 0 ? (
@@ -171,10 +209,12 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
                         key={idx}
                         type="button"
                         onClick={() => handleSelectLocation(suggestion.description)}
-                        className="w-full text-left px-6 py-4 hover:bg-white/10 transition-colors flex items-center space-x-3 border-b border-white/5 last:border-b-0"
+                        className="w-full text-left px-6 py-4 hover:bg-black/5 transition-colors flex items-center space-x-3 border-b border-black/5 last:border-b-0"
                       >
                         <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-200 truncate">{suggestion.description}</span>
+                        <span className="text-gray-700 truncate">
+                          {suggestion.description}
+                        </span>
                       </button>
                     ))
                   ) : (
@@ -183,23 +223,64 @@ export default function LandingPage({ onLocationSelect }: LandingPageProps) {
                     </div>
                   )}
                 </div>
-                
-                {/* Take me on a journey integrated action */}
-                <div className="bg-blue-900/40 p-4 border-t border-blue-500/30">
-                  <button
-                    type="button"
-                    onClick={() => alert("Journey mode coming soon!")}
-                    className="w-full group relative inline-flex items-center justify-center px-6 py-3 font-bold text-blue-100 transition-all duration-200 bg-blue-600/20 border border-blue-500/50 rounded-xl hover:bg-blue-600/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-900 overflow-hidden"
-                  >
-                    <Compass className="w-5 h-5 mr-2 group-hover:rotate-45 transition-transform duration-500 text-blue-400" />
-                    Take me on a journey to "{query}"
-                  </button>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+
+        {/* City Chips */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="flex flex-wrap gap-2 justify-center mt-6"
+        >
+          {CITY_CHIPS.map((chip) => (
+            <button
+              key={chip.label}
+              onClick={() => handleSelectLocation(chip.query)}
+              disabled={isSearching}
+              className="bg-black/5 hover:bg-black/10 border border-black/10 rounded-full px-4 py-2 text-sm text-black/60 hover:text-black transition-colors disabled:opacity-50"
+            >
+              {chip.label}
+            </button>
+          ))}
         </motion.div>
-      </div>
+      </section>
+
+      {/* ===== SECTION 3: HOW IT WORKS ===== */}
+      <section className="relative z-10 py-20 px-6 max-w-4xl mx-auto">
+        <motion.h2
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="text-center text-sm text-black/40 uppercase tracking-widest font-medium mb-12"
+        >
+          How it works
+        </motion.h2>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {STEPS.map((step, i) => (
+            <motion.div
+              key={step.title}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ delay: i * 0.15 }}
+              className="bg-black/5 border border-black/10 rounded-2xl p-6 text-center"
+            >
+              <div className="w-12 h-12 rounded-xl bg-black/10 flex items-center justify-center mx-auto mb-4">
+                <step.icon className="w-6 h-6 text-black" />
+              </div>
+              <h3 className="text-black font-bold text-lg mb-2">{step.title}</h3>
+              <p className="text-black/50 text-sm">{step.description}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Bottom spacer */}
+      <div className="h-20" />
     </motion.div>
   );
 }
