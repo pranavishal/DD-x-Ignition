@@ -1,4 +1,4 @@
-# URBAN MARBLE — AI-Powered Architectural Explorer (DD x Ignition)
+# URBAN MARBLE — AI-Powered Architectural Explorer (DD x Ignition) 1ST PLACE WINNTER
 
 The travel app for people who look up. Explore any city's architecture in 3D, scan real buildings with AR to uncover their history, find places to stay nearby, and discover hidden gems from the community.
 
